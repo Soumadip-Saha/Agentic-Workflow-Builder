@@ -16,7 +16,7 @@
   "routes": [
     {
       "src": "/api/invoke",
-      "dest": "api/invoke.py"
+      "dest": "/api/invoke.py"
     },
     {
       "src": "/(.*)",
