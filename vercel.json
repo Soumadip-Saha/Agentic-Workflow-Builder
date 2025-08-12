@@ -1,7 +1,26 @@
 {
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "python3.11"
+  "builds": [
+    {
+      "src": "next.config.ts",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "api/invoke.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb",
+        "runtime": "python3.11"
+      }
     }
-  }
+  ],
+  "routes": [
+    {
+      "src": "/api/invoke",
+      "dest": "api/invoke.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
 }
