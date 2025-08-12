@@ -1,103 +1,153 @@
-import Image from "next/image";
+// src/app/page.tsx
+'use client';
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+import React, { DragEvent, useCallback, useRef, useMemo } from 'react';
+import ReactFlow, {
+  Controls,
+  Background,
+  ReactFlowProvider,
+  ReactFlowInstance,
+  Node,
+  MarkerType,
+  BackgroundVariant,
+  BaseEdge,
+  EdgeProps,
+  getStraightPath,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+
+import { useWorkflowStore } from '@/store/workflow-store';
+import { Toolbar } from '@/components/panels/Toolbar';
+import CustomNode from '@/components/nodes/CustomNode';
+import { SettingsPanel } from '@/components/panels/SettingsPanel';
+// CHANGE 1: Import the InteractNode component here directly.
+import { InteractNode } from '@/components/nodes/InteractNode';
+
+const nodeTypes = {
+  custom: CustomNode,
+};
+
+const connectionLineStyle = { stroke: '#2563eb', strokeWidth: 2 };
+
+export default function WorkflowBuilderPage() {
+  // CHANGE 2: Get the isInteractMode flag from the store.
+  const { 
+    nodes, 
+    edges, 
+    onNodesChange, 
+    onEdgesChange, 
+    onConnect, 
+    addNode, 
+    isValidConnection,
+    deleteElements,
+    setSelectedNodeId,
+    isInteractMode, // <-- Get the flag
+  } = useWorkflowStore();
+  
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const [reactFlowInstance, setReactFlowInstance] = React.useState<ReactFlowInstance | null>(null);
+
+  const onDragOver = useCallback((event: DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event: DragEvent) => {
+      event.preventDefault();
+      const type = event.dataTransfer.getData('application/reactflow') as any;
+      if (typeof type === 'undefined' || !type || !reactFlowWrapper.current || !reactFlowInstance) return;
+      const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      addNode(type, position);
+    },
+    [reactFlowInstance, addNode]
+  );
+
+  const onNodesDelete = useCallback(
+    (deleted: Node[]) => {
+      deleteElements(deleted, []);
+    },
+    [deleteElements],
+  );
+
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    // CHANGE 3: Prevent opening settings panel if in interact mode.
+    if (!isInteractMode) {
+      setSelectedNodeId(node.id);
+    }
+  }, [setSelectedNodeId, isInteractMode]);
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+  }, [setSelectedNodeId]);
+
+  const defaultEdgeOptions = {
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#2563eb' },
+    style: { stroke: '#2563eb', strokeWidth: 2 },
+  };
+
+  const edgeTypes = useMemo(() => ({
+    dashed: ({ id, sourceX, sourceY, targetX, targetY, markerEnd, style }: EdgeProps) => {
+      const [edgePath] = getStraightPath({ sourceX, sourceY, targetX, targetY });
+      return (
+        <BaseEdge 
+          id={id} 
+          path={edgePath} 
+          markerEnd={markerEnd} 
+          style={{ ...style, stroke: '#facc15', strokeWidth: 2, strokeDasharray: '5 5' }} 
         />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+      );
+    },
+  }), []);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  return (
+    // CHANGE 4: Add 'relative' positioning to the main container.
+    <div className="flex h-screen w-screen flex-row bg-white relative">
+      <Toolbar />
+      <SettingsPanel />
+
+      {/* CHANGE 5: Conditionally render the InteractNode as a floating panel. */}
+      {isInteractMode && (
+        <div className="absolute top-4 right-4 z-20">
+          <InteractNode />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
+
+      <div className="flex-grow h-full" ref={reactFlowWrapper}>
+        <ReactFlowProvider>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onNodesDelete={onNodesDelete}
+            onConnect={onConnect}
+            isValidConnection={isValidConnection}
+            onInit={setReactFlowInstance}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            defaultEdgeOptions={defaultEdgeOptions}
+            connectionLineStyle={connectionLineStyle}
+            fitView
+
+            // CHANGE 6: Lock the canvas when in interact mode.
+            nodesDraggable={!isInteractMode}
+            nodesConnectable={!isInteractMode}
+            elementsSelectable={!isInteractMode}
+            panOnDrag={!isInteractMode}
+            zoomOnScroll={!isInteractMode}
+            zoomOnPinch={!isInteractMode}
+            zoomOnDoubleClick={!isInteractMode}
+          >
+            <Controls />
+            <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+          </ReactFlow>
+        </ReactFlowProvider>
+      </div>
     </div>
   );
 }
