@@ -16,7 +16,8 @@
   "routes": [
     {
       "src": "/api/invoke",
-      "dest": "/api/invoke.py"
+      "methods": ["POST"],
+      "dest": "/api/invoke"
     },
     {
       "src": "/(.*)",
