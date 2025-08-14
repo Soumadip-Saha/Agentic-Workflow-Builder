@@ -20,7 +20,7 @@ class InvokeRequest(BaseModel):
     query: str
 
 # Define the API endpoint. Its only job is to route the request.
-@app.post("/")
+@app.post("/api/invoke")
 async def invoke_workflow_endpoint(request: InvokeRequest):
     """
     API endpoint that receives a validated workflow and a query,
