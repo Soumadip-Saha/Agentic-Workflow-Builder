@@ -8,7 +8,9 @@ from pydantic import BaseModel
 from engine.base.workflow import WorkFlow
 # Import the specific function that contains our core logic
 from engine.invoke_graph import run_and_stream
+from dotenv import load_dotenv
 
+load_dotenv(".env")
 
 app = FastAPI()
 

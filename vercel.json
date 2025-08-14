@@ -5,7 +5,7 @@
       "use": "@vercel/next"
     },
     {
-      "src": "api/invoke.py",
+      "src": "api/python_handler.py",
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "15mb",
@@ -14,11 +14,6 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/invoke",
-      "methods": ["POST"],
-      "dest": "/api/invoke"
-    },
     {
       "src": "/(.*)",
       "dest": "/$1"

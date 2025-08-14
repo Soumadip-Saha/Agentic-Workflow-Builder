@@ -56,7 +56,7 @@ async def run_and_stream(workflow_blueprint: WorkFlow, query: str):
             streaming_node_id = namespace[0].split(":")[0]
             
             # Ensure the node object is correctly extracted for logging
-            node_name = builder.nodes_by_id.get(streaming_node_id, {}).get("name", "UnknownNode")
+            node_name = builder.nodes_by_id.get(streaming_node_id, {}).name
 
             if stream_mode == "messages":
                 msg, emetadata = event

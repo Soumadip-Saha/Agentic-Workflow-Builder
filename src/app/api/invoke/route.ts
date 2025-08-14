@@ -8,8 +8,11 @@ export async function POST(req: Request) {
     // 1. Get the request body that the client sent.
     const body = await req.json();
 
-    // 2. Make a NEW request from here (the Next.js server) to our Python backend.
-    const pythonServerUrl = 'http://127.0.0.1:8000/api/app';
+    const pythonServerUrl = process.env.VERCEL_URL
+    // In PRODUCTION, the endpoint is the full path based on the filename.
+    ? `https://${process.env.VERCEL_URL}/api/python_handler`
+    // In LOCAL, the endpoint is the root of the server running on port 8005.
+    : 'http://127.0.0.1:8005/';
     const pythonResponse = await fetch(pythonServerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
